@@ -288,6 +288,9 @@ def get_email(customer_id, id):
 def get_malicious_actors(customer_id):
     # Query to group by sender email address and count the number of malicious emails
     # This is a complex query so call db directly.
+    if not is_valid_uuid(customer_id):
+        return jsonify({"error": "Invalid query parameters"}), 400
+    
     malicious_actors_query = db.session.query(
         Email.from_,
         func.count().label('count')
@@ -296,7 +299,7 @@ def get_malicious_actors(customer_id):
     ).group_by(
         Email.from_
     ).all()
-    
+
     malicious_actors = [
         {"id": actor[0], "count": actor[1]}
         for actor in malicious_actors_query
@@ -311,8 +314,8 @@ def get_malicious_actors(customer_id):
         "total": len(malicious_actors),
         "data": malicious_actors
     }
-    
-    return json.dumps(response_data, indent=4), 200
+
+    return jsonify(response_data), 200
 
 # "GET" REPORT: Domains that appeared in malicious emails, sent by the customer
 @api.route('/customers/<customer_id>/reports/domains', methods=['GET'])
@@ -330,7 +333,7 @@ def get_malicious_domains(customer_id):
         "data": malicious_domains
     }
     
-    return json.dumps(response, indent=4), 200
+    return jsonify(response), 200
 
 # Helper function to fetch malicious domains
 def fetch_malicious_domains(customer_id):
@@ -344,6 +347,7 @@ def fetch_malicious_domains(customer_id):
         Email.id == Domains.email_id
     ).filter(
         Domains.sender_id == customer_id,
+        Domains.domain is not None,
         Email.malicious == True,
         Email.domains != None
     ).group_by(
@@ -352,47 +356,29 @@ def fetch_malicious_domains(customer_id):
 
     # Construct the list of malicious domains and counts
     malicious_domains = [
-        {
-            "id": domain[0], 
-            "count": domain[1]}
+        jsonify({
+            "id": str(domain[0]), 
+            "count": str(domain[1])})
         for domain in malicious_domains_query
     ]
-    
+
     return malicious_domains
 
 # "GET" REPORT: Users who have received malicious emails, sent by the customer_id
-@api.route('/customers/<string:customer_id>/reports/recipients', methods=['GET'])
-def get_malicious_recipients(customer_id):
-    recipients_query = db.session.query(
-        Email.to,
-        func.count().label('count')
-    ).filter(
-        Email.cid == customer_id,
-        Email.malicious == True
-    ).group_by(
-        Email.to
-    ).all()
+@api.route('/debug/domains', methods=['GET'])
+def get_domains_debug():
+    domains = Domains.query.all()
+    return jsonify(domains, indent=4), 200
 
-    malicious_recipients = [
-        {
-            "id": recipient[0],
-            "count": recipient[1]
-        } for recipient in recipients_query
-    ]
-
-    # Generate current time
-    generated_at = str(datetime.datetime.utcnow().isoformat("T")) + "Z"
-
-    # Construct response
-    response = {
-        "generated_at": str(generated_at),
-        "total": len(malicious_recipients),
-        "data": malicious_recipients
-    }
-
-    return json.dumps(response, indent=4), 200
-
-
+# "GET" REPORT: Users who have received malicious emails, sent by the customer_id
+@api.route('/debug/emailsm', methods=['GET'])
+def get_emails_debug():
+    emails_query = Email.query.filter(Email.malicious==True).all()
+    emails = jsonify(
+            [email.to_dict() for email in emails_query]
+        )
+    
+    return jsonify(emails, indent=4), 200
 
 
     
