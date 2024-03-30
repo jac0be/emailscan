@@ -77,11 +77,14 @@ def store_domains(email_id, body, from_, to):
 
     return list(domains)
 
+def customer_exists(customer_id):
+    customer = Customer.query.get(customer_id)
+    return customer is not None
+
 # Helper function to create a customer, if one does not exist
 def create_customer(customer_id, email_address):
-    
-    existing_customer = Customer.query.get(customer_id)
-    if existing_customer is not None:
+
+    if customer_exists(customer_id):
         return
     else:
         new_customer = Customer(
@@ -171,12 +174,16 @@ def is_valid_rfc3339(date_string):
     except ValueError:
         return False
 
+
 # "GET" All submitted emails for a given customer
 @api.route('/customers/<customer_id>/emails', methods=['GET'])
 def get_emails(customer_id):
     if not is_valid_uuid(customer_id):
-            return jsonify({"error": "Invalid customer_id"}), 400
+        return jsonify({"error": "Invalid customer_id"}), 400
     
+    if not customer_exists(customer_id):
+        return jsonify([])
+
     # Get query args
     # We don't specifcy type or default as we do that in validation
     limit = request.args.get('limit')
@@ -274,24 +281,36 @@ def get_email(customer_id, id):
     except:
         return jsonify({"error": "Invalid query parameters"}), 400
     
-    if email is None:
+    if email is None or not customer_exists(customer_id):
         # If the email is not found, return 404 Not Found
         return jsonify({"404": "Email or Customer does not exist"}), 404
 
     return json.dumps(email.to_dict(), indent=4), 200
 
-# "GET" REPORT: All senders of malicious emails (customer id is ignored)
+# "GET" REPORT: All senders of malicious emails
 @api.route('/customers/<customer_id>/reports/actors', methods=['GET'])
 def get_malicious_actors(customer_id):
-    # Query to group by sender email address and count the number of malicious emails
-    # This is a complex query so call db directly.
+
     if not is_valid_uuid(customer_id):
         return jsonify({"error": "Invalid query parameters"}), 400
     
+    # Generate current time
+    generated_at = str(datetime.datetime.utcnow().isoformat("T")) + "Z"
+
+    # if not customer_exists(customer_id):
+    #     return jsonify({
+    #     "generated_at": str(generated_at),
+    #     "total": 0,
+    #     "data": []
+    # }, 200)
+
+    # Query to group by sender email address and count the number of malicious emails
+    # This is a complex query so call db directly.
     malicious_actors_query = db.session.query(
         Email.from_,
         func.count().label('count')
     ).filter(
+        Email.cid==customer_id,
         Email.malicious == True
     ).group_by(
         Email.from_
@@ -301,9 +320,6 @@ def get_malicious_actors(customer_id):
         {"id": actor[0], "count": actor[1]}
         for actor in malicious_actors_query
     ]
-
-    # Generate current time
-    generated_at = str(datetime.datetime.utcnow().isoformat("T")) + "Z"
     
     # Construct response
     response_data = {
@@ -317,6 +333,7 @@ def get_malicious_actors(customer_id):
 # "GET" REPORT: Domains that appeared in malicious emails, sent by the customer
 @api.route('/customers/<customer_id>/reports/domains', methods=['GET'])
 def get_malicious_domains(customer_id):
+
     # Fetch malicious domains for the given customer
     malicious_domains = fetch_malicious_domains(customer_id)
     
@@ -353,13 +370,57 @@ def fetch_malicious_domains(customer_id):
 
     # Construct the list of malicious domains and counts
     malicious_domains = [
-        jsonify({
-            "id": str(domain[0]), 
-            "count": str(domain[1])})
+        {
+            "id": domain[0], 
+            "count": domain[1]
+        }
         for domain in malicious_domains_query
     ]
 
     return malicious_domains
+
+# "GET" REPORT: Recipients who have received malicious emails
+@api.route('/customers/<customer_id>/reports/recipients', methods=['GET'])
+def get_malicious_recipients(customer_id):
+    if not is_valid_uuid(customer_id):
+        return jsonify({"error": "Invalid customer_id"}), 400
+
+    if not customer_exists(customer_id):
+        return jsonify({
+            "generated_at": str(datetime.datetime.utcnow().isoformat("T") + "Z"),
+            "total": 0,
+            "data": []
+        }), 200
+
+    # Query to group by recipient email address and count the number of malicious emails received
+    # This is a complex query so call db directly.
+    malicious_recipients_query = db.session.query(
+        Email.to,
+        func.count().label('count')
+    ).filter(
+        Email.cid == customer_id,
+        Email.malicious == True
+    ).group_by(
+        Email.to
+    ).all()
+
+    malicious_recipients = [
+        {"id": recipient[0], "count": recipient[1]}
+        for recipient in malicious_recipients_query
+    ]
+
+    # Generate current time
+    generated_at = str(datetime.datetime.utcnow().isoformat("T")) + "Z"
+
+    # Construct response
+    response_data = {
+        "generated_at": str(generated_at),
+        "total": len(malicious_recipients),
+        "data": malicious_recipients
+    }
+
+    return jsonify(response_data), 200
+
 
 # "GET" REPORT: Users who have received malicious emails, sent by the customer_id
 @api.route('/debug/domains', methods=['GET'])
