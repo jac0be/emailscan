@@ -130,6 +130,8 @@ def store_email(customer_id, metadata, contents):
         cid = customer_id,
         metadata_ = str(metadata['spamhammer']),
         to = contents['to'],
+        created_at = datetime.datetime.utcnow(),
+        updated_at = datetime.datetime.utcnow(),
         from_ = contents['from'],
         subject = contents['subject'],
         body = contents['body'],
@@ -163,8 +165,14 @@ def create_email(customer_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-def is_valid_rfc3339(time):
-    return datetime.datetime.strptime(time, '%Y-%m-%dT%H:%M:%S%z').tzinfo is not None
+def is_valid_rfc3339(date_string):
+    try:
+        # Remove Z and replace with '+00:00' (copied from online)
+        date_string = date_string.replace('Z', '+00:00')
+        datetime.datetime.fromisoformat(date_string)
+        return True
+    except ValueError:
+        return False
 
 # "GET" All submitted emails for a given customer
 @api.route('/customers/<customer_id>/emails', methods=['GET'])
@@ -204,11 +212,11 @@ def fetch_emails(customer_id, limit, offset, start, end, email_from, email_to, s
     if start:
         if not is_valid_rfc3339(start):
             return None
-        query = query.filter(Email.created_at >= start)
+        query = query.filter(Email.created_at >= datetime.datetime.fromisoformat(start.replace('Z', '+00:00')))
     if end:
         if not is_valid_rfc3339(end):
             return None
-        query = query.filter(Email.created_at <= end)
+        query = query.filter(Email.created_at <= datetime.datetime.fromisoformat(end.replace('Z', '+00:00')))
     if email_from:
         if not is_valid_email(email_from):
             return None
