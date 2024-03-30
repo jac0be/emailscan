@@ -152,18 +152,15 @@ def create_email(customer_id):
     if not is_valid_uuid(customer_id):
         return jsonify({"error": "Invalid customer_id"}), 400
     # :TODO error 500
-    try: 
-        data = request.get_json()
-        if not data or not is_valid_post_request(data):
-            return jsonify({"error": "Request body is missing or not JSON"}), 400
-        
-        metadata = data['metadata']
-        contents = data['contents']
-        email = store_email(customer_id, metadata, contents)
-        return json.dumps(email.to_dict(), indent=4), 201
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    
+    data = request.get_json()
+    if not data or not is_valid_post_request(data):
+        return jsonify({"error": "Request body is missing or not JSON"}), 400
+    
+    metadata = data['metadata']
+    contents = data['contents']
+    email = store_email(customer_id, metadata, contents)
+    return json.dumps(email.to_dict(), indent=4), 201
 
 def is_valid_rfc3339(date_string):
     try:
