@@ -111,7 +111,7 @@ def store_email(customer_id, metadata, contents):
     json_input = json.dumps(input)
     
     # Setup pipes and run commandline comand
-    command = f"cat | spamoverflow/spamhammer-v1.0.0-linux-amd64 scan --input - --output -"
+    command = f"cat | spamoverflow/spamhammer scan --input - --output -"
     process = subprocess.Popen(
         command,
         stdin=subprocess.PIPE,
