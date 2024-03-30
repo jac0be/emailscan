@@ -267,13 +267,20 @@ def fetch_emails(customer_id, limit, offset, start, end, email_from, email_to, s
 @api.route('/customers/<customer_id>/emails/<id>', methods=['GET'])
 def get_email(customer_id, id):
     # Fetch the email information from the database
-    email = Email.query.filter_by(id=id, cid=customer_id).first()
+    if not is_valid_uuid(customer_id) or not is_valid_uuid(id):
+        return jsonify({"error": "Invalid query parameters"}), 400
+    
+    email = None
+
+    try:
+        email = Email.query.filter_by(id=id, cid=customer_id).first()
+    except:
+        return jsonify({"error": "Invalid query parameters"}), 400
     
     if email is None:
         # If the email is not found, return 404 Not Found
-        return "Not Found", 404
-    
-    
+        return jsonify({"404": "Email or Customer does not exist"}), 404
+
     return json.dumps(email.to_dict(), indent=4), 200
 
 # "GET" REPORT: All senders of malicious emails (customer id is ignored)
