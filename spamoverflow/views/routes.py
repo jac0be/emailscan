@@ -297,13 +297,6 @@ def get_malicious_actors(customer_id):
     # Generate current time
     generated_at = str(datetime.datetime.utcnow().isoformat("T")) + "Z"
 
-    # if not customer_exists(customer_id):
-    #     return jsonify({
-    #     "generated_at": str(generated_at),
-    #     "total": 0,
-    #     "data": []
-    # }, 200)
-
     # Query to group by sender email address and count the number of malicious emails
     # This is a complex query so call db directly.
     malicious_actors_query = db.session.query(
@@ -368,7 +361,7 @@ def fetch_malicious_domains(customer_id):
         Domains.domain
     ).all()
 
-    # Construct the list of malicious domains and counts
+    # Construct the list of malicious domains & counts
     malicious_domains = [
         {
             "id": domain[0], 
@@ -421,14 +414,11 @@ def get_malicious_recipients(customer_id):
 
     return jsonify(response_data), 200
 
-
-# "GET" REPORT: Users who have received malicious emails, sent by the customer_id
 @api.route('/debug/domains', methods=['GET'])
 def get_domains_debug():
     domains = Domains.query.all()
     return jsonify(domains, indent=4), 200
 
-# "GET" REPORT: Users who have received malicious emails, sent by the customer_id
 @api.route('/debug/emailsm', methods=['GET'])
 def get_emails_debug():
     emails_query = Email.query.filter(Email.malicious==True).all()
