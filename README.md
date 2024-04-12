@@ -54,9 +54,6 @@ curl -X GET
 -H "Accept: application/json"
 "http://emailscan.wilma.monster/api/v1/customers/{customer_id}/emails/{id}"
 
-shell
-Copy code
-
 #### Path Parameters
 
 - `customer_id*`: String - The customer identifier (UUIDv4).
@@ -90,9 +87,6 @@ curl -X POST \
   }
 }'
 
-markdown
-Copy code
-
 #### Path Parameters
 
 - `customer_id*`: String - The customer identifier (UUIDv4).
@@ -118,9 +112,6 @@ curl -X GET
 -H "Accept: application/json"
 "http://emailscan.wilma.monster/api/v1/customers/{customer_id}/reports/actors"
 
-shell
-Copy code
-
 #### Path Parameters
 
 - `customer_id*`: String - The customer identifier (UUIDv4).
@@ -140,9 +131,6 @@ Returns a report consisting of the link domains found in malicious emails for th
 curl -X GET
 -H "Accept: application/json"
 "http://emailscan.wilma.monster/api/v1/customers/{customer_id}/reports/domains"
-
-bash
-Copy code
 
 #### Path Parameters
 
@@ -164,9 +152,6 @@ curl -X GET
 -H "Accept: application/json"
 "http://emailscan.wilma.monster/api/v1/customers/{customer_id}/reports/recipients"
 
-shell
-Copy code
-
 #### Path Parameters
 
 - `customer_id*`: String - The customer identifier (UUIDv4).
@@ -185,9 +170,6 @@ The health endpoint is useful for determining whether an instance is still healt
 
 curl -X GET
 "http://emailscan.wilma.monster/api/v1/health"
-
-csharp
-Copy code
 
 #### Responses
 
