@@ -1,8 +1,8 @@
-# EmailScan
+# PhishGuard
 
 ## Version: 1.1.0
 
-SpamOverflow is an API service designed to scan malicious emails and provide comprehensive reports on malicious actors, their targets, and link domains utilized in these emails.
+PhishGuard is an API service designed to scan malicious emails and provide comprehensive reports on malicious actors, their targets, and link domains utilized in these emails.
 
 ## Usage
 The api is available for use at [http://emailscan.wilma.monster/api/v1](http://emailscan.wilma.monster/api/v1). See below for a list of endpoints and their respective functionalities.
