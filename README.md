@@ -1,4 +1,4 @@
-# SpamOverflow
+# EmailScan
 
 ## Version: 1.1.0
 
